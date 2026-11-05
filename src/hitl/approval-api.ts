@@ -10,7 +10,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const STATUSES = new Set<ApprovalStatus | 'all'>(['pending', 'approved', 'denied', 'expired', 'consumed', 'all']);
 
 /**
- * Approval API (bind to loopback / an internal network; put SSO in front for a web UI).
+ * Approval API (bind to loopback / an internal network; put SSO in front if exposed).
  *
  *   GET  /healthz
  *   GET  /v1/approvals?status=pending        admin token  — list (includes arguments)

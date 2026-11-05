@@ -149,6 +149,4 @@ vite.config.ts.timestamp-*
 .turbo
 
 *.pem
-examples/keys/
-examples/dev.env
 .mysql/

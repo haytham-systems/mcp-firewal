@@ -6,13 +6,9 @@
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc -p .",
-    "mcp-fw": "tsx --env-file=examples/dev.env src/cli/index.ts",
-    "demo:seed": "tsx --env-file=examples/dev.env examples/seed.ts",
-    "demo": "tsx --env-file=examples/dev.env examples/demo.ts",
+    "mcp-fw": "tsx src/cli/index.ts",
     "db:up": "./scripts/db-up.sh",
-    "db:down": "./scripts/db-down.sh",
-    "demo:call": "tsx --env-file=examples/dev.env examples/call.ts",
-    "ui": "tsx --env-file=examples/dev.env examples/ui/server.ts"
+    "db:down": "./scripts/db-down.sh"
   },
   "keywords": [],
   "author": "",

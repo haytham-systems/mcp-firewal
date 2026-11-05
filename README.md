@@ -85,43 +85,12 @@ Logged events include `tool.call.intercepted`, `policy.decision`, `approval.requ
 ## Getting started
 
 ```bash
-cat > examples/dev.env <<EOF
-MCP_FW_DATABASE_URL=mysql://root@127.0.0.1:3307/mcp_firewall
-MCP_FW_HMAC_SECRET=$(openssl rand -base64 32)
-MCP_FW_AUDIT_KEY=$(openssl rand -base64 32)
-MCP_FW_ADMIN_TOKEN=$(openssl rand -base64 32)
-MCP_FW_APPROVAL_URL=http://127.0.0.1:7801
-EOF
-
 npm install
-npm run db:up            # local MySQL on 127.0.0.1:3307, data in ./.mysql (or point MCP_FW_DATABASE_URL anywhere)
-npm test                 # unit tests: matching, precedence, smuggling, crypto
-npm run demo             # end-to-end: both transports, approvals, attacks, audit tamper detection
+npm test
+npm run typecheck
 ```
 
-### Local approval dashboard
-
-The local dashboard lets you send fixture MCP calls through the HTTP firewall, inspect live
-approvals, and cast Ed25519 votes in the browser. It talks only to the local demo upstream; it
-does not connect to real services. Start the database and, if this is a fresh disposable demo
-database, seed it first (`npm run demo:seed` resets the demo tables):
-
-```bash
-# Terminal 1: the HTTP firewall and approval API
-npm run mcp-fw -- start --config examples/firewall.http.json
-
-# Terminal 2: dashboard
-npm run ui
-```
-
-Open `http://127.0.0.1:4173`. Choose a scenario and run it; pending actions appear in the inbox.
-Open an approval, select a registered key such as `examples/keys/alice.key.pem`, then sign a
-vote. The browser checks that the arguments match the challenge before enabling the vote, and
-the private key is not uploaded or persisted. The UI bridge binds to loopback by default and
-keeps the admin token on the server.
-
-`examples/dev.env` is local-only and ignored by git. In production, generate fresh secrets for
-your deployment:
+For a deployment, configure the required database and secrets in your environment:
 
 ```bash
 export MCP_FW_DATABASE_URL='mysql://fw:***@db:3306/mcp_firewall'
@@ -130,16 +99,21 @@ export MCP_FW_AUDIT_KEY=$(openssl rand -base64 32)     # argument HMACs
 export MCP_FW_ADMIN_TOKEN=$(openssl rand -base64 32)   # approval API read access
 ```
 
+```bash
+npm run mcp-fw -- migrate
+npm run mcp-fw -- start --config /path/to/firewall.json
+```
+
 ### Provision
 
 ```bash
-npx tsx src/cli/index.ts migrate
-npx tsx src/cli/index.ts agent:create agent-ops --name "Ops agent"        # prints API key once
-npx tsx src/cli/index.ts approver:keygen alice --out ~/.mcp-fw             # on Alice's machine
-npx tsx src/cli/index.ts approver:register alice --jwk alice.pub.jwk.json --groups dba,finance
+npm run mcp-fw -- migrate
+npm run mcp-fw -- agent:create agent-ops --name "Ops agent"        # prints API key once
+npm run mcp-fw -- approver:keygen alice --out ~/.mcp-fw             # on Alice's machine
+npm run mcp-fw -- approver:register alice --jwk alice.pub.jwk.json --groups dba,finance
 ```
 
-Then add classifications and policies (see `examples/seed.ts`):
+Then add tool classifications and policies for your environment:
 
 ```sql
 INSERT INTO fw_tool_classes (server_pattern, tool_pattern, risk, resource_template)
@@ -190,11 +164,6 @@ npx tsx src/cli/index.ts approve <id> --key … --deny
 npx tsx src/cli/index.ts audit:verify
 ```
 
-To try it by hand: run `npm run demo:seed`, then
-`npm run mcp-fw -- start --config examples/firewall.http.json`. In another terminal run
-`npm run demo:call -- db.drop_table '{"database":"prod","table":"users"}'`, and in a third,
-`npm run mcp-fw -- approvals` followed by `npm run mcp-fw -- approve <id> --key examples/keys/alice.key.pem`.
-
 ## Layout
 
 ```
@@ -206,7 +175,6 @@ src/audit/                hash-chained append + verifier
 src/proxy/                SessionInterceptor (decisions) · FirewallSession (transport bridge) · agent auth
 src/firewall.ts           composition root: stdio + Streamable HTTP downstreams, stdio/HTTP upstreams
 src/cli/index.ts          mcp-fw CLI
-examples/                 upstream test server, seed, configs, end-to-end demo, single-call client
 ```
 
 ## Limits and next steps
