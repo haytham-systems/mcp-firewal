@@ -1,0 +1,35 @@
+{
+  "name": "mcp-firewall",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc -p .",
+    "mcp-fw": "tsx --env-file=examples/dev.env src/cli/index.ts",
+    "demo:seed": "tsx --env-file=examples/dev.env examples/seed.ts",
+    "demo": "tsx --env-file=examples/dev.env examples/demo.ts",
+    "db:up": "./scripts/db-up.sh",
+    "db:down": "./scripts/db-down.sh",
+    "demo:call": "tsx --env-file=examples/dev.env examples/call.ts",
+    "ui": "tsx --env-file=examples/dev.env examples/ui/server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "jose": "^6.2.13",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "bin": {
+    "mcp-fw": "./src/cli/index.ts"
+  }
+}

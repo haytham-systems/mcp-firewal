@@ -1,0 +1,6 @@
+{
+  "serverId": "acme-ops",
+  "upstream": { "type": "stdio", "command": "npx", "args": ["tsx", "examples/upstream-server.ts"] },
+  "downstream": { "type": "http", "host": "127.0.0.1", "port": 7800 },
+  "approvals": { "host": "127.0.0.1", "port": 7801, "holdTimeoutMs": 20000, "ttlSeconds": 900 }
+}
