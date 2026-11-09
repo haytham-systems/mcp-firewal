@@ -1,5 +1,6 @@
-import { readFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import mysql, { type Pool, type PoolConnection } from 'mysql2/promise';
+import { fileURLToPath } from 'node:url';
 
 export type { Pool };
 
@@ -35,13 +36,20 @@ export async function withTx<T>(pool: Pool, fn: (c: PoolConnection) => Promise<T
   }
 }
 
-/** Applies sql/schema.sql (idempotent). */
+/** Runs pending Sequelize CLI migrations. */
 export async function migrate(uri: string): Promise<void> {
-  const sql = await readFile(new URL('../../sql/schema.sql', import.meta.url), 'utf8');
-  const conn = await mysql.createConnection({ uri, multipleStatements: true });
-  try {
-    await conn.query(sql);
-  } finally {
-    await conn.end();
-  }
+  const projectRoot = fileURLToPath(new URL('../../', import.meta.url));
+  const sequelizeCli = fileURLToPath(new URL('../../node_modules/sequelize-cli/lib/sequelize', import.meta.url));
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(process.execPath, [sequelizeCli, 'db:migrate'], {
+      cwd: projectRoot,
+      env: { ...process.env, MCP_FW_DATABASE_URL: uri },
+      stdio: 'inherit',
+    });
+    child.once('error', reject);
+    child.once('exit', (code, signal) => {
+      if (code === 0) resolve();
+      else reject(new Error(`sequelize-cli db:migrate failed${signal ? ` with signal ${signal}` : ` with exit code ${code}`}`));
+    });
+  });
 }

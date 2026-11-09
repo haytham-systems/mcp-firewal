@@ -17,7 +17,7 @@ import { generateAgentKey } from '../proxy/agents.js';
 
 const USAGE = `mcp-fw — MCP Firewall & Intent Guard
 
-  mcp-fw migrate                                         apply sql/schema.sql
+  mcp-fw migrate                                         apply pending Sequelize migrations
   mcp-fw start --config firewall.json                    run the proxy (stdio or http per config)
   mcp-fw approvals:serve [--host 127.0.0.1 --port 7801]  run only the approval API
 

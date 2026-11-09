@@ -4,9 +4,51 @@ const { DataTypes, literal } = require('sequelize');
 
 const binary32 = 'BINARY(32)';
 const utcNow = literal('UTC_TIMESTAMP(3)');
+const schemaTables = [
+  'fw_agents',
+  'fw_approvers',
+  'fw_approver_groups',
+  'fw_tool_classes',
+  'fw_policies',
+  'fw_approvals',
+  'fw_approval_signatures',
+  'fw_audit_log',
+  'fw_audit_head',
+];
+
+const createAuditTriggers = async (sequelize, existing = new Set()) => {
+  if (!existing.has('trg_fw_audit_no_update')) {
+    await sequelize.query(
+      "CREATE TRIGGER `trg_fw_audit_no_update` BEFORE UPDATE ON `fw_audit_log` FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fw_audit_log is append-only'",
+    );
+  }
+  if (!existing.has('trg_fw_audit_no_delete')) {
+    await sequelize.query(
+      "CREATE TRIGGER `trg_fw_audit_no_delete` BEFORE DELETE ON `fw_audit_log` FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fw_audit_log is append-only'",
+    );
+  }
+};
 
 module.exports = {
   async up(queryInterface) {
+    const [existingTables] = await queryInterface.sequelize.query(
+      'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()',
+    );
+    const existing = new Set(existingTables.map(({ TABLE_NAME }) => TABLE_NAME));
+    const existingSchemaTables = schemaTables.filter((table) => existing.has(table));
+    if (existingSchemaTables.length > 0) {
+      if (existingSchemaTables.length !== schemaTables.length) {
+        throw new Error(
+          `Partial firewall schema found (${existingSchemaTables.join(', ')}); refusing to apply initial migration over existing tables`,
+        );
+      }
+      const [triggers] = await queryInterface.sequelize.query(
+        "SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME IN ('trg_fw_audit_no_update', 'trg_fw_audit_no_delete')",
+      );
+      await createAuditTriggers(queryInterface.sequelize, new Set(triggers.map(({ TRIGGER_NAME }) => TRIGGER_NAME)));
+      return;
+    }
+
     await queryInterface.createTable('fw_agents', {
       id: { type: DataTypes.STRING(64), allowNull: false, primaryKey: true },
       display_name: { type: DataTypes.STRING(128), allowNull: false },
@@ -19,7 +61,7 @@ module.exports = {
     await queryInterface.createTable('fw_approvers', {
       id: { type: DataTypes.STRING(64), allowNull: false, primaryKey: true },
       display_name: { type: DataTypes.STRING(128), allowNull: false },
-      kid: { type: DataTypes.STRING(64), allowNull: false, unique: true },
+      kid: { type: DataTypes.STRING(64), allowNull: false },
       public_jwk: { type: DataTypes.JSON, allowNull: false },
       status: { type: DataTypes.ENUM('active', 'disabled'), allowNull: false, defaultValue: 'active' },
       created_at: { type: DataTypes.DATE(3), allowNull: false, defaultValue: utcNow },
@@ -152,29 +194,10 @@ module.exports = {
       "INSERT IGNORE INTO `fw_audit_head` (`id`, `last_seq`, `last_hash`) VALUES (1, 0, UNHEX(REPEAT('00', 32)))",
     );
 
-    await queryInterface.sequelize.query(
-      "CREATE TRIGGER `trg_fw_audit_no_update` BEFORE UPDATE ON `fw_audit_log` FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fw_audit_log is append-only'",
-    );
-    await queryInterface.sequelize.query(
-      "CREATE TRIGGER `trg_fw_audit_no_delete` BEFORE DELETE ON `fw_audit_log` FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fw_audit_log is append-only'",
-    );
+    await createAuditTriggers(queryInterface.sequelize);
   },
 
-  async down(queryInterface) {
-    await queryInterface.sequelize.query('DROP TRIGGER IF EXISTS `trg_fw_audit_no_update`');
-    await queryInterface.sequelize.query('DROP TRIGGER IF EXISTS `trg_fw_audit_no_delete`');
-    for (const table of [
-      'fw_audit_head',
-      'fw_audit_log',
-      'fw_approval_signatures',
-      'fw_approvals',
-      'fw_policies',
-      'fw_tool_classes',
-      'fw_approver_groups',
-      'fw_approvers',
-      'fw_agents',
-    ]) {
-      await queryInterface.dropTable(table);
-    }
+  async down() {
+    throw new Error('Firewall schema rollback is disabled to prevent accidental loss of data and audit history');
   },
 };

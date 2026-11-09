@@ -167,7 +167,7 @@ npx tsx src/cli/index.ts audit:verify
 ## Layout
 
 ```
-sql/schema.sql            DDL (idempotent): agents, approvers, tool classes, policies, approvals, audit
+migrations/               Sequelize CLI schema migrations
 src/core/                 canonical JSON, glob/resource matching, JSON-RPC types, errors, stderr logger
 src/policy/               pure evaluation engine + cached MySQL repository
 src/hitl/                 challenge/decision crypto, approval state machine, approval HTTP API
