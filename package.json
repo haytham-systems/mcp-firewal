@@ -7,6 +7,8 @@
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc -p .",
     "mcp-fw": "tsx src/cli/index.ts",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:up": "./scripts/db-up.sh",
     "db:down": "./scripts/db-down.sh"
   },
@@ -18,10 +20,12 @@
     "@modelcontextprotocol/sdk": "^1.32.1",
     "jose": "^6.2.13",
     "mysql2": "^3.24.6",
+    "sequelize": "^6.37.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "sequelize-cli": "^6.6.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
