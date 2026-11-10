@@ -3,7 +3,7 @@
 const { DataTypes, literal } = require('sequelize');
 
 const binary32 = 'BINARY(32)';
-const utcNow = literal('UTC_TIMESTAMP(3)');
+const utcNow = literal('(UTC_TIMESTAMP(3))');
 const schemaTables = [
   'fw_agents',
   'fw_approvers',
@@ -97,7 +97,7 @@ module.exports = {
       server_pattern: { type: DataTypes.STRING(128), allowNull: false },
       tool_pattern: { type: DataTypes.STRING(128), allowNull: false },
       resource_pattern: { type: DataTypes.STRING(512), allowNull: false, defaultValue: '**' },
-      risk_levels: { type: DataTypes.SET('read', 'write', 'destructive'), allowNull: true },
+      risk_levels: { type: "SET('read','write','destructive')", allowNull: true },
       effect: { type: DataTypes.ENUM('allow', 'deny', 'require_approval'), allowNull: false },
       required_approvals: { type: DataTypes.TINYINT.UNSIGNED, allowNull: false, defaultValue: 1 },
       approver_group: { type: DataTypes.STRING(64), allowNull: true },

@@ -104,6 +104,10 @@ npm run mcp-fw -- migrate
 npm run mcp-fw -- start --config /path/to/firewall.json
 ```
 
+Migrations are tracked in `SequelizeMeta`. The initial migration adopts a complete existing
+firewall schema, refuses to run over a partial one, and is intentionally not reversible to protect
+stored approvals and audit history.
+
 ### Provision
 
 ```bash
